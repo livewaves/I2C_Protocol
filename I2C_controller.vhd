@@ -84,29 +84,29 @@ begin
 	
 		if rising_edge(Clock) then
 		
-			Data_In_Int									<=	Data_In;
-			Address_Pointer_Int								<=	Address_Pointer;
-			Send_Int									<=	Send;
-			Send_Prev									<=	Send_Int;
-			Data_Type_Int									<=	Data_Type;
-			I2C_Data_Read_Int								<=	I2C_Data_Read;
-			R_W_Int										<=	R_W;
-			SCL_Int										<=	'1';
-			I2C_Data_Write_Int								<=	'1';
-			R_W_Mode									<=	'0';	
-			I2C_Clock_Divider								<=	I2C_Clock_Divider + 1;
-			I2C_Start_Stop_Counter								<=	I2C_Start_Stop_Counter + 1;
-			Data_Out_Valid_Int								<=	'0';
+			Data_In_Int								<=	Data_In;
+			Address_Pointer_Int							<=	Address_Pointer;
+			Send_Int								<=	Send;
+			Send_Prev								<=	Send_Int;
+			Data_Type_Int								<=	Data_Type;
+			I2C_Data_Read_Int							<=	I2C_Data_Read;
+			R_W_Int									<=	R_W;
+			SCL_Int									<=	'1';
+			I2C_Data_Write_Int							<=	'1';
+			R_W_Mode								<=	'0';	
+			I2C_Clock_Divider							<=	I2C_Clock_Divider + 1;
+			I2C_Start_Stop_Counter							<=	I2C_Start_Stop_Counter + 1;
+			Data_Out_Valid_Int							<=	'0';
 
 			if (I2C_Clock_Divider < to_unsigned(75,9) or I2C_Clock_Divider > to_unsigned(196,9)) then
-				SCL_Int									<=	not I2C_Clock_Generation_Mode;
+				SCL_Int								<=	not I2C_Clock_Generation_Mode;
 			end if;
 
 			if (I2C_Clock_Divider = to_unsigned(271,9)) then
 			
-				I2C_Clock_Divider								<=	(others=>'0');
-				I2C_Clock_Counter								<=	I2C_Clock_Counter + 1;
-				Serial_Bit_Counter								<=	Serial_Bit_Counter - 1;
+				I2C_Clock_Divider						<=	(others=>'0');
+				I2C_Clock_Counter						<=	I2C_Clock_Counter + 1;
+				Serial_Bit_Counter						<=	Serial_Bit_Counter - 1;
 				
 			end if;
 
@@ -128,42 +128,42 @@ begin
 				-- Start condition by reseting SDA for 0.61 us. Then wait for another 0.75 us to reach the begining of data.
 				when "0010" =>	
 
-					I2C_Data_Write_Int						<=	'0';
+					I2C_Data_Write_Int					<=	'0';
 
 					if (I2C_Start_Stop_Counter > to_unsigned(61,8)) then
-						SCL_Int									<=	'0';					
+						SCL_Int						<=	'0';					
 					end if;
 					
 					if (I2C_Start_Stop_Counter = to_unsigned(135,8)) then
 					
-						I2C_Packet_Generation_State		<=	to_unsigned(3,4);	
-						I2C_Clock_Divider			<=	(others=>'0');
-						I2C_Clock_Generation_Mode		<=	'1';
-						Serial_Bit_Counter			<=	to_unsigned(6,3);
-						I2C_Clock_Counter			<=	(others=>'0');
+						I2C_Packet_Generation_State			<=	to_unsigned(3,4);	
+						I2C_Clock_Divider				<=	(others=>'0');
+						I2C_Clock_Generation_Mode			<=	'1';
+						Serial_Bit_Counter				<=	to_unsigned(6,3);
+						I2C_Clock_Counter				<=	(others=>'0');
 						
 					end if;
 
 				-- Sending serial bus address.
 				when "0011" =>	
 
-					I2C_Data_Write_Int						<=	Serial_Bus_Address(to_integer(Serial_Bit_Counter));
+					I2C_Data_Write_Int					<=	Serial_Bus_Address(to_integer(Serial_Bit_Counter));
 					
 					if (I2C_Clock_Counter = to_unsigned(7,6)) then
-						I2C_Packet_Generation_State		<=	to_unsigned(4,4);			
+						I2C_Packet_Generation_State			<=	to_unsigned(4,4);			
 					end if;
 
 				-- Sending write(read) bit.
 				when "0100" =>	
 
-					I2C_Data_Write_Int						<=	I2C_Write_Read;
+					I2C_Data_Write_Int					<=	I2C_Write_Read;
 					if (I2C_Clock_Counter = to_unsigned(8,6)) then
 					
-						I2C_Packet_Generation_State		<=	to_unsigned(5,4);	
+						I2C_Packet_Generation_State			<=	to_unsigned(5,4);	
 						if (I2C_Write_Read = '1') then
 						
-							I2C_Packet_Generation_State	<=	to_unsigned(7,4);	
-							I2C_Clock_Counter 				<= to_unsigned(17,6);
+							I2C_Packet_Generation_State		<=	to_unsigned(7,4);	
+							I2C_Clock_Counter 			<= to_unsigned(17,6);
 													
 						end if;						
 							
@@ -172,41 +172,41 @@ begin
 				-- Changing bus to read mode to receive acknowledge from sensor.
 				when "0101" =>	
 
-					R_W_Mode					<=	'1';
+					R_W_Mode						<=	'1';
 					if (I2C_Clock_Counter = to_unsigned(9,6)) then
 					
-						I2C_Packet_Generation_State		<=	to_unsigned(6,4);	
-						Serial_Bit_Counter			<=	to_unsigned(7,3);
+						I2C_Packet_Generation_State			<=	to_unsigned(6,4);	
+						Serial_Bit_Counter				<=	to_unsigned(7,3);
 						
 					end if;
 
 				-- Sending address pointer.
 				when "0110" =>	
 
-					I2C_Data_Write_Int				<=	Address_Pointer_Buff(to_integer(Serial_Bit_Counter));
+					I2C_Data_Write_Int					<=	Address_Pointer_Buff(to_integer(Serial_Bit_Counter));
 					
 					if (I2C_Clock_Counter = to_unsigned(17,6)) then
-						I2C_Packet_Generation_State		<=	to_unsigned(7,4);		
+						I2C_Packet_Generation_State			<=	to_unsigned(7,4);		
 					end if;
 
 				-- Changing bus to read mode to receive acknowledge from sensor.
 				when "0111" =>	
 
-					R_W_Mode					<=	'1';
+					R_W_Mode						<=	'1';
 					if (I2C_Clock_Counter = to_unsigned(18,6)) then
 					
-						I2C_Packet_Generation_State		<=	to_unsigned(9,4);	
-						Serial_Bit_Counter			<=	to_unsigned(7,3);
+						I2C_Packet_Generation_State			<=	to_unsigned(9,4);	
+						Serial_Bit_Counter				<=	to_unsigned(7,3);
 						
 						if (Data_Type_Buff = '0') then
 						
-							I2C_Packet_Generation_State	<=	to_unsigned(11,4);		
-							I2C_Clock_Counter 		<= to_unsigned(27,6);
+							I2C_Packet_Generation_State		<=	to_unsigned(11,4);		
+							I2C_Clock_Counter 			<= to_unsigned(27,6);
 												
 						end if;
 						
 						if (R_W_Buff = '1' and I2C_Write_Read = '0') then
-							I2C_Packet_Generation_State	<=	to_unsigned(8,4);		
+							I2C_Packet_Generation_State		<=	to_unsigned(8,4);		
 						end if;					
 	
 					end if;
@@ -261,7 +261,7 @@ begin
 					end if;
 										
 					if (I2C_Clock_Counter = to_unsigned(35,6)) then
-						I2C_Packet_Generation_State		<=	to_unsigned(12,4);		
+						I2C_Packet_Generation_State			<=	to_unsigned(12,4);		
 					end if;
 
 				-- Changing bus to read mode to receive acknowledge from sensor.
